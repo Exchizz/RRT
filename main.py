@@ -5,6 +5,7 @@ from pylab import ion
 from random import uniform
 from time import sleep
 from math import hypot, atan2, sin, cos, floor
+import matplotlib.patches as patches
 
 
 class Point:
@@ -12,24 +13,21 @@ class Point:
         self.x = x
         self.y = y
 
+
+
 class RRT:
-    def __init__(self):
-        # init plot
-        self.fig = figure(num=None, figsize=(6, 6), dpi=80, facecolor='w', edgecolor='k')
-        ion()
-        self.axis_size = 5
+    def __init__(self, root, color):
+        self.root = root
         self.step_size = 1
         self.config_list = []
+        self.axis_size = 10
+        self.add_tree(self.root)
+        self.color = color
 
     def updatePlot(self):
-        #clf()
 
         # Set axis
         axis([-self.axis_size,self.axis_size,-self.axis_size,self.axis_size])
-
-        # Plot bob position as dot and string as line
-        #plot(self.L1*sin(theta),self.L1*cos(theta), 'ro')
-        #plot([self.L1*sin(theta),0],[self.L1*cos(theta),0], '-')
 
         # Update the plot
         draw()
@@ -41,11 +39,16 @@ class RRT:
     def get_free_config(self):
         x = uniform(-self.axis_size, self.axis_size)
         y = uniform(-self.axis_size, self.axis_size)
+
+        while -5 < x < 3 and -8 < y < 7:
+            x = uniform(-self.axis_size, self.axis_size)
+            y = uniform(-self.axis_size, self.axis_size)
+
         config = Point(x,y)
         return config
 
     def plot_config(self, config):
-        plot(config.x, config.y,'o')
+        plot(config.x, config.y,  'o')
 
     def dot_line(self, from_config, shortest_config):
 
@@ -56,11 +59,18 @@ class RRT:
         for dot in range( int( dots_num ) + 1 ):
             x = from_config.x - dot*self.step_size*cos(angle)
             y = from_config.y - dot*self.step_size*sin(angle)
-            #plot([from_line.x, x],[from_line.y,y],'-')
-            plot(x,y,'o')
+
+            if -5 < x < 1 and -8 < y < 7:
+                plot([x,from_config.x],[y,from_config.y],self.color +'-')
+                return
+            plot(x,y,self.color + 'o')
             config = Point(x,y)
             self.config_list.append(config)
             #from_line = Point(x,y)
+        #self.plot_config(from_config)
+        plot([x,from_config.x],[y,from_config.y],self.color + '-')
+        self.config_list.append(from_config)
+
 
     def get_shortest_config(self, from_config):
         self.config_list.sort(key=lambda tmp: hypot(from_config.x - tmp.x,from_config.y - tmp.y), reverse=False)
@@ -68,22 +78,33 @@ class RRT:
 
         self.dot_line(shortest_config, from_config)
 
-        plot([shortest_config.x,from_config.x],[shortest_config.y,from_config.y],'-')
+        #plot([shortest_config.x,from_config.x],[shortest_config.y,from_config.y],'-')
 
-    def sample(self, tree):
+    def sample(self):
         free_config = self.get_free_config()
 
-        shortest_config = self.get_shortest_config(free_config)
+        self.get_shortest_config(free_config)
 
-        self.plot_config(free_config)
-        self.config_list.append(free_config)
         self.updatePlot()
 
-rrt = RRT()
-T1 = Point(0,0)
 
-rrt.add_tree(T1)
+# init plot
+fig = figure(num=None, figsize=(6, 6), dpi=80, facecolor='w', edgecolor='k')
+
+fig.gca().add_patch(patches.Rectangle(
+        (-5, -8),   # (x,y)
+        6,          # width
+        15,          # height
+    )
+)
+ion()
+
+rrt_start = RRT(Point(-7,1),'r')
+rrt_goal = RRT(Point(7,1),'b')
+
 for i in range(1000):
-    rrt.sample(T1)
-
+    rrt_start.sample()
+    sleep(0.1)
+    rrt_goal.sample()
+    sleep(0.1)
 sleep(100)
